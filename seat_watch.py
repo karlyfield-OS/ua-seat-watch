@@ -21,7 +21,7 @@ COURSES = ("HSM 338", "HSM 404", "HSM 425", "HSM 436", "MGT 386", "MGT 387", "MG
 CAMPUSES = ("Main Campus (Tuscaloosa)", "Online - Main Campus Students")
 FIELDS = ("subject", "courseNumber", "sequenceNumber", "courseReferenceNumber",
           "courseTitle", "meetingTime", "campus", "status")
-RESULT_HEADING = re.compile(r"Search Results\s*[—–-]\s*([\d,]+)\s+Class(?:es)?\b", re.I)
+RESULT_HEADING = re.compile(r"Search Results(?:\s*[—–-]\s*|\s+)([\d,]+)\s+Class(?:es)?\b", re.I)
 SEAT_STATUS = re.compile(r"\b(\d+)\s+of\s+(\d+)\s+seats?\s+remain\b", re.I)
 TIME_RANGE = re.compile(r"(\d{1,2}:\d{2}\s*[AP]M)\s*[-–—]\s*(\d{1,2}:\d{2}\s*[AP]M)", re.I)
 DAY_NAMES = ("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
