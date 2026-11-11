@@ -1,0 +1,93 @@
+name: UA seat watch
+
+on:
+  schedule:
+    - cron: '3-58/5 * * * *'
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: What should this run do?
+        type: choice
+        default: dry-run
+        options:
+          - dry-run
+          - test-push
+          - watch
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ua-seat-watch
+  cancel-in-progress: false
+
+jobs:
+  watch:
+    if: github.ref_name == github.event.repository.default_branch
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    env:
+      MODE: ${{ inputs.mode || 'watch' }}
+      STATE_PATH: .state/seats.json
+      STATE_CACHE_KEY: ua-seat-watch-v1-${{ github.run_id }}-${{ github.run_attempt }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install the watcher and Chromium
+        if: env.MODE != 'test-push'
+        run: |
+          python -m pip install -r requirements.txt
+          python -m playwright install --with-deps chromium
+
+      - name: Restore the most recent seat status
+        if: env.MODE == 'watch'
+        uses: actions/cache/restore@v5
+        with:
+          path: ${{ env.STATE_PATH }}
+          key: ${{ env.STATE_CACHE_KEY }}
+          restore-keys: ua-seat-watch-v1-
+
+      - name: Run the watcher
+        id: poll
+        env:
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+          NTFY_TOKEN: ${{ secrets.NTFY_TOKEN }}
+          NTFY_URL: ${{ vars.NTFY_URL }}
+          SEAT_WATCH_SCHEDULE: ${{ secrets.SEAT_WATCH_SCHEDULE }}
+        run: |
+          case "$MODE" in
+            dry-run)
+              python seat_watch.py --dry-run --notify-initial
+              ;;
+            test-push)
+              python seat_watch.py --test-push
+              ;;
+            watch)
+              previous_hash=''
+              if [[ -f "$STATE_PATH" ]]; then
+                previous_hash="$(sha256sum "$STATE_PATH")"
+              fi
+              python seat_watch.py --state "$STATE_PATH" --notify-initial
+              if [[ -f "$STATE_PATH" && "$(sha256sum "$STATE_PATH")" != "$previous_hash" ]]; then
+                echo 'state_changed=true' >> "$GITHUB_OUTPUT"
+              fi
+              ;;
+            *)
+              echo 'Unknown run mode.' >&2
+              exit 1
+              ;;
+          esac
+
+      - name: Save updated seat status
+        if: env.MODE == 'watch' && steps.poll.outputs.state_changed == 'true'
+        uses: actions/cache/save@v5
+        with:
+          path: ${{ env.STATE_PATH }}
+          key: ${{ env.STATE_CACHE_KEY }}
