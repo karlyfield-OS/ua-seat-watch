@@ -17,7 +17,7 @@ BANNER_URL = "https://bannerssb.ua.edu/StudentRegistrationSsb/ssb/term/termSelec
 TERM = "Spring 2027"
 LAST_CHECK_DATE = date(2027, 1, 20)
 CENTRAL = ZoneInfo("America/Chicago")
-COURSES = ("HSM 338", "HSM 404", "HSM 425", "HSM 436", "MGT 386", "MGT 387", "MGT 406")
+COURSES = ("HSM 338", "HSM 404", "HSM 425", "HSM 436", "MGT 423", "MGT 387", "MGT 406")
 CAMPUSES = ("Main Campus (Tuscaloosa)", "Online - Main Campus Students")
 FIELDS = ("subject", "courseNumber", "sequenceNumber", "courseReferenceNumber",
           "courseTitle", "meetingTime", "campus", "status")
